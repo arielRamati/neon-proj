@@ -35,27 +35,4 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/webapp:${{ github.sha }}
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Update kubeconfig
-        uses: aws-actions/eks-update-kubeconfig@v2
-        with:
-          cluster-name: ${{ secrets.EKS_CLUSTER_NAME }}
-
-      - name: Setup Helm
-        uses: azure/setup-helm@v3
-
-      - name: Deploy with Helm
-        env:
-          IMAGE_TAG: ${{ github.sha }}
-          IMAGE_REPO: ghcr.io/${{ github.repository_owner }}/webapp
-        run: |
-          helm repo add stable https://charts.helm.sh/stable || true
-          helm upgrade --install webapp charts/webapp \
-            --set image.repository=$IMAGE_REPO \
-            --set image.tag=$IMAGE_TAG
+      
