@@ -18,7 +18,7 @@ jobs:
           
       - name: Run tests
         run: |
-          python -m pytest tests
+          python -m pytest tests/unit
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -42,4 +42,8 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/neon-proj:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/neon-proj:latest
 
-      
+      - name: run docker container and test integration
+        run: |
+          docker run -d -p 8080:8080 --name neon-proj-container neon-proj:latest
+          sleep 5
+          python -m pytest tests/integration
