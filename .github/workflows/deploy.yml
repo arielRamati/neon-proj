@@ -55,7 +55,7 @@ jobs:
 
     - name: Update kubeconfig
       run: |
-        aws eks update-kubeconfig --name neon-proj --region $AWS_REGION
+        aws eks update-kubeconfig --name neon-app-cluster --region $AWS_REGION
 
     - name: Deploy via Helm
       run: |
