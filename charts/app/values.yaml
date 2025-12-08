@@ -6,10 +6,9 @@ image:
 replicaCount: 1
 
 service:
-  type: LoadBalancer
+  type: ClusterIP
   port: 80
   targetPort: 8080
-
 
 containerPort: 8080
 
