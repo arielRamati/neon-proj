@@ -1,73 +1,106 @@
-# DevOps Engineer Home Assignment — webapp
+# neon-proj
 
-This repository contains a minimal end-to-end example demonstrating:
+Simple end-to-end DevOps setup using:
 
-- A simple "Hello, World" Flask web application
-- A `Dockerfile` to containerize the app
-- A custom Helm chart (`charts/webapp`) to deploy the app to Kubernetes
-- Terraform configuration (`terraform/`) to provision AWS infrastructure (VPC + EKS)
-- GitHub Actions workflows to build/push the image and deploy via Helm
+- Flask application
+- Docker containerization
+- Terraform for AWS provisioning
+- Kubernetes (EKS) deployment using Helm
+- GitHub Actions CI/CD automation
 
-**Important:** This repo is scaffolded to be functional, but you must provide cloud credentials and a few repository secrets before running the automated workflows.
+## Project Structure
 
-**High-level flow**
+| Path | Description |
+|------|-------------|
+| `app/` | Flask API with `/greet` endpoint |
+| `charts/app/` | Helm chart for deployment to EKS |
+| `terraform/` | AWS VPC and EKS infrastructure |
+| `.github/workflows/` | CI/CD workflows |
 
-1. Use Terraform to provision AWS infra (VPC and EKS). This creates an EKS cluster and worker nodes.
-2. Push container image to GitHub Container Registry (GHCR) using GitHub Actions.
-3. GitHub Actions obtains cluster credentials and runs `helm upgrade --install` using the chart in `charts/webapp`.
+## CI Pipeline: ci.yml
 
-**What’s included**
+This workflow runs automatically on every push to the main branch and includes the following steps:
 
-- `app/` — Flask app, `Dockerfile`, and `requirements.txt`.
-- `charts/webapp/` — Helm chart with Deployment and Service templates.
-- `terraform/` — Terraform configuration using `terraform-aws-modules/vpc/aws` and `terraform-aws-modules/eks/aws` modules.
-- `.github/workflows/ci-cd.yml` — Build, push to GHCR and Helm deploy to EKS on `main` branch pushes.
+1. Checkout repository code
+2. Install Python dependencies using pip
+3. Run unit tests with pytest
+4. Build a Docker image of the application
+5. Tag the image with both the current commit SHA and latest
 
-Getting started (local)
+This guarantees each main branch commit produces a validated and versioned container image for deployment.
 
-1. Install prerequisites: `terraform`, `kubectl`, `helm`, `docker`, and AWS CLI with credentials.
+## Provision AWS Infrastructure (Optional CD)
 
-2. Provision infra (creates VPC and EKS cluster):
+### Prerequisites:
+
+- AWS CLI installed and configured 
+- Terraform or Tofu CLI installed
+
+### Example:
 
 ```bash
 cd terraform
-terraform init
-terraform apply -var 'aws_region=us-east-1' -var 'cluster_name=webapp-cluster'
+tofu init
+tofu apply
 ```
 
-After apply finishes, note the cluster name and region to set in GitHub repo secrets.
+This will provision:
 
-3. Build and push image locally (optional):
+- Networking (VPC)
+- EKS cluster
+- Worker node group for workloads
+
+## Local Development
+
+### Required tools (macOS example)
 
 ```bash
-docker build -t ghcr.io/<OWNER>/webapp:local -f app/Dockerfile app
-docker push ghcr.io/<OWNER>/webapp:local
+brew install tofu kubectl helm docker
+
+# AWS CLI
+curl "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "AWSCLIV2.pkg"
+sudo installer -pkg AWSCLIV2.pkg -target /
+
 ```
 
-CI/CD (GitHub Actions)
+### Test the application locally
 
-Set these repository secrets before pushing to `main`:
+```bash
+docker build -t neon-proj:local .
+docker run -p 8080:8080 neon-proj:local
+```
 
-- `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` — IAM user with permissions to manage EKS
-- `AWS_REGION` — e.g. `us-east-1`
-- `EKS_CLUSTER_NAME` — cluster name created by Terraform
+Open a browser to:
 
-The `ci-cd.yml` workflow triggers on pushes to `main`. It:
+```
+http://127.0.0.1:8080
+```
 
-- Builds and pushes the Docker image to GHCR (using `GITHUB_TOKEN`).
-- Configures AWS credentials and updates kubeconfig for the target EKS cluster.
-- Runs `helm upgrade --install` with the chart in `charts/webapp`, setting the built image tag.
+## CI Flow Summary
 
-Notes and next steps
+Push to main branch triggers:
 
-- Replace `charts/webapp/values.yaml` `image.repository` with `ghcr.io/<OWNER>/webapp` or allow the workflow to set image at deploy time.
-- You may want to add an ingress (ALB/NGINX) depending on how you want to expose the service.
-- For production, secure the GHCR push with an appropriate policy and consider non-root containers, resource limits, and pod security.
+1. Code checkout
+2. Dependency installation
+3. Unit tests
+4. Docker image build, tag
 
-If you want, I can:
 
-- Add a `terraform.yml` workflow to automatically run Terraform plan and apply with approvals.
-- Add an Ingress and an HTTPS certificate using cert-manager and an ALB.
-- Add integration tests or a healthcheck probe to the app.
-# neon-proj
-# neon-proj
+## CD Pipeline: deploy.yml
+
+This workflow automates deployment to the existing EKS cluster whenever code is pushed to the main branch.
+
+It performs the following steps:
+
+1. Checkout repository code
+2. Authenticate to AWS using credentials stored in GitHub Secrets
+3. Authenticate to Docker Hub
+4. Build a new Docker image of the application
+5. Tag the image with both the commit SHA and latest
+6. Push the updated image to Docker Hub
+7. Initialize and apply Terraform (Tofu) to ensure infrastructure is up to date
+8. Update local kubeconfig to connect to the EKS cluster
+9. Deploy the application using Helm (upgrade --install)
+10. Run Helm integration tests to validate the deployment
+
+This enables continuous deployment: every push to main results in an updated image being deployed directly to AWS EKS.
