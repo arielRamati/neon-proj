@@ -40,13 +40,18 @@ jobs:
         docker tag neon-proj:latest ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:$SHA_TAG
         docker tag neon-proj:latest ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:latest
 
-    - name: Terraform Init
+    - name: Setup OpenTofu
+      uses: opentofu/setup-opentofu@v1
+      with:
+        tofu_version: '1.10.7'
+
+    - name: Tofu Init
       working-directory: terraform
-      run: terraform init
+      run: tofu init
 
     - name: Terraform Apply
       working-directory: terraform
-      run: terraform apply -auto-approve
+      run: tofu apply -auto-approve
 
     - name: Update kubeconfig
       run: |
