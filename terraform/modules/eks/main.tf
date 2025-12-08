@@ -37,7 +37,7 @@ module "eks" {
 
     vpc-cni = {
         most_recent    = true
-        before_compute = true  # 🚀 Required for nodes to become Ready
+        before_compute = true 
     }
-    }
+  }
 }
