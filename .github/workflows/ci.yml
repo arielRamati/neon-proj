@@ -36,13 +36,4 @@ jobs:
           SHA_TAG=${{ github.sha }}
           docker tag neon-proj:latest ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:$SHA_TAG
           docker tag neon-proj:latest ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:latest
-
-      - name: Push image to Docker Hub
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/neon-proj:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/neon-proj:latest
-
-      - name: deploy and run tests
-        run: |
-          helm upgrade --install app charts/app --wait
-          helm test app           
+         

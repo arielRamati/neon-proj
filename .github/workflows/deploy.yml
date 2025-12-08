@@ -1,0 +1,61 @@
+name: Deploy App to EKS
+
+on:
+  push:
+    branches: ["main"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/neon-proj
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Build Docker image
+      run: |
+        docker build -t neon-proj:latest .    
+
+    - name: Tag image with SHA
+      run: |
+        IMAGE=neon-proj
+        SHA_TAG=${{ github.sha }}
+        docker tag neon-proj:latest ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:$SHA_TAG
+        docker tag neon-proj:latest ${{ secrets.DOCKERHUB_USERNAME }}/$IMAGE:latest
+
+    - name: Terraform Init
+      working-directory: terraform
+      run: terraform init
+
+    - name: Terraform Apply
+      working-directory: terraform
+      run: terraform apply -auto-approve
+
+    - name: Update kubeconfig
+      run: |
+        aws eks update-kubeconfig --name eks-cluster --region $AWS_REGION
+
+    - name: Deploy via Helm
+      run: |
+        helm upgrade --install neon-proj charts/app --set image.repository=$DOCKER_IMAGE
+
+    - name: Run Helm tests
+      run: |
+        helm test neon-proj --logs
