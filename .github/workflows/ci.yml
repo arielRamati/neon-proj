@@ -42,8 +42,7 @@ jobs:
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/neon-proj:${{ github.sha }}
           docker push ${{ secrets.DOCKERHUB_USERNAME }}/neon-proj:latest
 
-      - name: run docker container and test integration
+      - name: deploy and run tests
         run: |
-          docker run -d -p 8080:8080 --name neon-proj-container neon-proj:latest
-          sleep 5
-          python -m pytest tests/integration
+          helm upgrade --install app charts/app --wait
+          helm test app           
