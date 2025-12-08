@@ -1,7 +1,9 @@
-from app.app import app
+from app import app
 import requests
+import os
 
-BASE_URL = "http://localhost:8080"
+BASE_URL = os.getenv("BASE_URL", "http://neon-proj-neon-proj.default.svc.cluster.local")
+
 
 def test_greet_shows_name():    
     response = requests.post(

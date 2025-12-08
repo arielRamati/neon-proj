@@ -1,10 +1,10 @@
 import pytest
-from app.app import app
+from app.app import app as flask_app
 
 @pytest.fixture
 def client():
-    app.config['TESTING'] = True
-    with app.test_client() as client:
+    flask_app.config['TESTING'] = True
+    with flask_app.test_client() as client:
         yield client
 
 def test_default_route(client):
