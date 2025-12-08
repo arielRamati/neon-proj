@@ -6,9 +6,10 @@ image:
 replicaCount: 1
 
 service:
-  type: ClusterIP
+  type: LoadBalancer
   port: 80
   targetPort: 8080
+
 
 containerPort: 8080
 
@@ -34,3 +35,8 @@ readinessProbe:
   initialDelaySeconds: 3
   periodSeconds: 5
   urlPath: /ready
+
+tests:
+  image:
+    repository: arielramati/neon-proj
+    tag: "latest"
